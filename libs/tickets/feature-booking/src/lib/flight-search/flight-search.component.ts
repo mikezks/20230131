@@ -1,9 +1,20 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, Injectable, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FlightCardComponent } from '../flight-card/flight-card.component';
 import { CityPipe } from '@flight-demo/shared/ui-common';
 import { Flight, FlightService } from '@flight-demo/tickets/domain';
+import {
+  of,
+  switchMap,
+  timer,
+  Subject,
+  takeUntil,
+  Subscription,
+  Observable,
+  PartialObserver,
+  tap,
+} from 'rxjs';
 
 @Component({
   selector: 'app-flight-search',
@@ -24,11 +35,23 @@ export class FlightSearchComponent {
   };
 
   private flightService = inject(FlightService);
+  subscriptions = new Subscription();
 
   search(): void {
     if (!this.from || !this.to) {
       return;
     }
+
+    /* const destroy$ = new Subject<void>();
+
+    this.subscriptions.add(
+      of(true).pipe(
+        switchMap(() => timer(1_000)),
+        takeUntil(destroy$)
+      ).subscribe()
+    );
+
+    destroy$.next(); */
 
     // Reset properties
     this.selectedFlight = undefined;
@@ -45,5 +68,38 @@ export class FlightSearchComponent {
 
   select(f: Flight): void {
     this.selectedFlight = { ...f };
+  }
+}
+
+@Injectable()
+export class RxConnector implements OnDestroy {
+  private subscription = new Subscription();
+
+  connect<T>(
+    stream$: Observable<T>,
+    observer?: PartialObserver<T>
+  ): Subscription {
+    const subscription = stream$.subscribe(observer);
+    this.subscription.add(subscription);
+    return subscription;
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+}
+
+@Component({
+  selector: 'app-component',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+  providers: [RxConnector],
+})
+export class AppComponent {
+  constructor(private rx: RxConnector) {
+    this.rx.connect(timer(0, 1000), {
+      next: (value) => console.log(value),
+    });
+    this.rx.connect(timer(500, 1000).pipe(tap((value) => console.log(value))));
   }
 }
