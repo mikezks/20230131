@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { provideTicketsState } from '@flight-demo/tickets/domain';
 import { FlightBookingComponent } from './flight-booking.component';
 import { FlightEditReactiveComponent } from './flight-edit-reactive/flight-edit-reactive.component';
 import { FlightLookupComponent } from './flight-lookup/flight-lookup.component';
@@ -27,6 +28,7 @@ export const FLIGHT_BOOKING_ROUTES: Routes = [
         component: PassengerSearchComponent,
       },
     ],
+    providers: [provideTicketsState()],
   },
 ];
 
